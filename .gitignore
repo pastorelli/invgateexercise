@@ -1,1 +1,6 @@
 .env
+
+# Django Recommended
+*.egg-info
+*.pot
+*.py[co]
