@@ -21,11 +21,6 @@ class TwitterAPIConnector(object):
         oauth = self._get_oaut()
         response = requests.get(url, auth=oauth)
         json_response = response.json()
-        if response.status_code == 200:
-            return {
-                'twitter_profile': json_response,
-                'status': 200
-            }
         return {
             'twitter_content': json_response,
             'status': response.status_code

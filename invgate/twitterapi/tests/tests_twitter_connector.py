@@ -94,5 +94,5 @@ class TwitterAPIConnectorTest(TestCase):
         connector = TwitterAPIConnector()
         response = connector.get_twitter_profile("dummy_username_not_exist")
         self.assertEqual(response['status'], 200)
-        self.assertEqual(response['twitter_profile'],
+        self.assertEqual(response['twitter_content'],
                          {'twitter_profile': {'twitter_response'}})
