@@ -1,3 +1,6 @@
+#vs code
+.vscode/*
+
 .env
 
 # Django Recommended
