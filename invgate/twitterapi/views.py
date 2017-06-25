@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from braces.views import JSONResponseMixin
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponse
 from django.views.generic import View
 
 from twitterapi import api_keys
@@ -28,8 +28,11 @@ class RetrieveTwitterProfileView(JSONResponseMixin, View):
         twitter_profile = self._get_twitter_profile(username)
         if twitter_profile:
             return self.render_json_response(
-                self._twitter_profile_to_dict(twitter_profile))
-        return
+                {
+                    'data': self._twitter_profile_to_dict(twitter_profile)
+                }
+            )
+        return HttpResponse("processing request", status=202)
 
     def _twitter_profile_to_dict(self, twitter_profile):
         return {

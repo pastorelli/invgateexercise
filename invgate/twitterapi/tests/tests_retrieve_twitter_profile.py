@@ -56,12 +56,22 @@ class RetrieveTwitterProfileTest(TestCase):
         dummy_profile = self._dummy_twitter_profile()
         response = self.client.get(
             reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
-        json_dummy_profile = json.dumps(
-            {
-                'name': 'dummy_name',
-                'description': 'dummy_description',
-                'profile_pic_uri': 'dummy_pic_uri',
-                'popularity_index': 0
-            }
+        json_dummy_profile = {
+            'name': 'dummy_name',
+            'description': 'dummy_description',
+            'profile_pic_uri': 'dummy_pic_uri',
+            'popularity_index': 0
+        }
+        response_dummy = json.dumps(
+            {'data': json_dummy_profile}
         )
-        self.assertEqual(response.content, json_dummy_profile)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, response_dummy)
+
+    def test_get_processing_request_at_the_first_request(self):
+        response = self.client.get(
+            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.content, "processing request")
+
+
