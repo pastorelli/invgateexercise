@@ -2,3 +2,5 @@ Django==1.11.2
 requests==2.18.1
 requests-oauthlib==0.8.0
 mock==2.0.0
+celery==4.0.2
+django-braces==1.11.0
