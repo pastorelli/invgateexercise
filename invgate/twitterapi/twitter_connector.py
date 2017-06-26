@@ -20,9 +20,8 @@ class TwitterAPIConnector(object):
         url = "{}screen_name={}".format(TWITTER_PROFILE_URL, twitter_username)
         oauth = self._get_oaut()
         response = requests.get(url, auth=oauth)
-        json_response = response.json()
         return {
-            'twitter_content': json_response,
+            'twitter_content': response.content,
             'status': response.status_code
         }
 
