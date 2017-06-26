@@ -1,6 +1,7 @@
-Interview Exercise
 
-Twitter web crawler using a message broker =====
+Twitter web crawler using a message broker
+=====
+
 Twitter API exercise
 =====
 
@@ -13,31 +14,33 @@ Requirements
 This app needs celery and rabbitMQ in order to process the twitter profile requests.
 
 To install rabbitMQ on ubuntu/debian
+```
 $ sudo apt-get install rabbitmq-server
-
+```
 For other enviroments check the installation page on the rabbitmq website:
-https://www.rabbitmq.com/download.html
+`https://www.rabbitmq.com/download.html`
 
 
 Quick start
 -----------
 
 1. Add "twitterapi" to your INSTALLED_APPS setting like this::
-
+```python
     INSTALLED_APPS = [
         ...
         'twitterapi',
     ]
-
+```
 2. Include the twitterapi URLconf in your project urls.py like this::
 
+```python
     url(r'^twitterapi/', include('twitterapi.urls')),
-
+```
 3. Run `python manage.py migrate` to create the twitterapi models.
 
-4. Configure Celery
-	a. In the directory where your settings.py is located creates a celery.py file.
-	Changing 'projectname' with your project name
+4. Configure Celery.
+    In the directory where your `settings.py` is located creates a `celery.py` file.
+    Changing 'projectname' with your project name
 ```python
 from __future__ import absolute_import, unicode_literals
 import os
@@ -56,9 +59,9 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
-
 ```
-	b. In the same directory inside your __init__.py file add 
+5. In the same directory inside your `__init__.py` file add
+
 ```python
 from __future__ import absolute_import, unicode_literals
 
@@ -67,24 +70,22 @@ from __future__ import absolute_import, unicode_literals
 from .celery import app as celery_app
 
 __all__ = ['celery_app']
-
 ```
 
-5. You can now run celery on your console
+6. You can now run celery on your console
 
-	$ celery -A projectname worker -l info
+	`$ celery -A projectname worker -l info`
 	where projectname is the project name
 
-5. In your settings.py add the information about your twitter api keys
-
-# The keys can be obtained using the twiiter dev page:
-#     -. First create an app and then create the keys for that app
-#         https://apps.twitter.com/
-
+7. In your `settings.py` add the information about your twitter api keys:
+    > The keys can be obtained using the twiiter dev page:
+    > First create an app and then create the keys for that app
+         `https://apps.twitter.com/`
+```python
 CONSUMER_KEY = "KEY"
 CONSUMER_SECRET = "KEY"
 
 OAUTH_TOKEN = "KEY"
 OAUTH_TOKEN_SECRET = "KEY"
-
-6. Visit http://127.0.0.1:8000/twitterapi/?username=twitterusername to get the twitter profile
+```
+8. Visit `http://127.0.0.1:8000/twitterapi/?username=twitterusername` to get the twitter profile
