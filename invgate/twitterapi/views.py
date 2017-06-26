@@ -43,9 +43,11 @@ class RetrieveTwitterProfileView(JSONResponseMixin, View):
         twitter_task_profile = self._get_twitter_task_status(username)
         if twitter_task_profile:
             if twitter_task_profile.status == 404:
+                twitter_task_profile.delete()
                 return HttpResponseNotFound(
                     "Twitter username doesnt exist")
             if twitter_task_profile.status == 401:
+                twitter_task_profile.delete()
                 return HttpResponse("Twitter API token invalid", status=401)
             if twitter_task_profile.status == 202:
                 return HttpResponse("processing request", status=202)
@@ -53,6 +55,7 @@ class RetrieveTwitterProfileView(JSONResponseMixin, View):
                 twitter_profile = self._parse_twitter_profile(
                     username,
                     twitter_task_profile.twitter_response)
+                twitter_task_profile.delete()
                 return self.render_json_response(
                     {
                         'data': self._twitter_profile_to_dict(twitter_profile)
