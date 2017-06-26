@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import json
 
 from braces.views import JSONResponseMixin
-from django.http import HttpResponseBadRequest
+from django.http import (HttpResponseBadRequest, HttpResponse,
+                         HttpResponseNotFound)
 from django.views.generic import View
 
-from .models import TwitterProfile
-from .twitter_connector import TwitterAPIConnector
+from .models import TwitterProfile, TwitterTaskStatus
+from .tasks import request_twitter_profile_task
 
 
 class RetrieveTwitterProfileView(JSONResponseMixin, View):
@@ -23,34 +25,44 @@ class RetrieveTwitterProfileView(JSONResponseMixin, View):
             return HttpResponseBadRequest(
                 "Twitter username expected as a GET param")
 
+        # Check if the profile already exists
         twitter_profile = self._get_twitter_profile(username)
         if twitter_profile:
             return self.render_json_response(
                 {
                     'data': self._twitter_profile_to_dict(twitter_profile)
                 })
-        response = self._request_profile_twitter_api(username)
-        if response['status'] == 404:
-            return HttpResponseBadRequest(
-                "Twitter username doesnt exist")
-        if response['status'] == 401:
-            return HttpResponseBadRequest(
-                "Twitter API token invalid")
-        if response['status'] == 200:
-            twitter_profile = self._parse_twitter_profile(
-                username,
-                response['twitter_content'])
-        return self.render_json_response(
-            {
-                'data': self._twitter_profile_to_dict(twitter_profile)
-            })
-        # return HttpResponseBadRequest(response['twitter_content'])
 
-    def _request_profile_twitter_api(self, username):
-        connector = TwitterAPIConnector()
-        return connector.get_twitter_profile(username)
+        # Check if there is already a job for this profile
+        twitter_task_profile = self._get_twitter_task_status(username)
+        if twitter_task_profile:
+            if twitter_task_profile.status == 404:
+                return HttpResponseNotFound(
+                    "Twitter username doesnt exist")
+            if twitter_task_profile.status == 401:
+                return HttpResponse("Twitter API token invalid", status=401)
+            if twitter_task_profile.status == 202:
+                return HttpResponse("processing request", status=202)
+            if twitter_task_profile.status == 200:
+                twitter_profile = self._parse_twitter_profile(
+                    username,
+                    twitter_task_profile.twitter_response)
+                return self.render_json_response(
+                    {
+                        'data': self._twitter_profile_to_dict(twitter_profile)
+                    })
+            return HttpResponse(twitter_task_profile.twitter_response,
+                                status=twitter_task_profile.status)
+
+        # If there are no jobs create one
+        job_id = request_twitter_profile_task.delay(username)
+        twitter_task_status = TwitterTaskStatus(
+            username=username, job=str(job_id))
+        twitter_task_status.save()
+        return HttpResponse("processing request", status=202)
 
     def _parse_twitter_profile(self, username, twitter_profile_data):
+        twitter_profile_data = json.loads(twitter_profile_data)
         twitter_profile = TwitterProfile(
             username=username,
             name=twitter_profile_data.get('name', ''),
@@ -73,4 +85,10 @@ class RetrieveTwitterProfileView(JSONResponseMixin, View):
         try:
             return TwitterProfile.objects.get(username=username)
         except TwitterProfile.DoesNotExist:
+            return None
+
+    def _get_twitter_task_status(self, username):
+        try:
+            return TwitterTaskStatus.objects.get(username=username)
+        except TwitterTaskStatus.DoesNotExist:
             return None

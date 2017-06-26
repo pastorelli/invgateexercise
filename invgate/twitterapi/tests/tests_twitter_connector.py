@@ -52,12 +52,9 @@ class TwitterAPIConnectorTest(TestCase):
         self.assertIsInstance(connector._get_oaut(), OAuth1)
 
     class MockedRequestResponse(object):
-        def __init__(self, status_code, profile={}):
+        def __init__(self, status_code, content={}):
             self.status_code = status_code
-            self.profile = profile
-
-        def json(self):
-            return self.profile
+            self.content = content
 
     @patch("twitterapi.twitter_connector.CONSUMER_KEY", "invalid")
     @patch("twitterapi.twitter_connector.CONSUMER_SECRET", "invalid")
@@ -89,7 +86,7 @@ class TwitterAPIConnectorTest(TestCase):
     def test_get_twitter_profile_username_found(self, mock_requests_get):
         mock_response = self.MockedRequestResponse(
             200,
-            profile={'twitter_profile': {'twitter_response'}})
+            content={'twitter_profile': {'twitter_response'}})
         mock_requests_get.return_value = mock_response
         connector = TwitterAPIConnector()
         response = connector.get_twitter_profile("dummy_username_not_exist")

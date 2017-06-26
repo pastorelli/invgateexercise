@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.test import RequestFactory, TestCase
 from mock import patch
 
-from ..models import TwitterProfile
+from ..models import TwitterProfile, TwitterTaskStatus
 from ..views import RetrieveTwitterProfileView
 
 
@@ -19,9 +19,18 @@ class RetrieveTwitterProfileTest(TestCase):
 
     def _dummy_twitter_profile(self):
         return TwitterProfile.objects.create(
+            username="dummy_name",
             name="dummy_name",
             short_description="dummy_description",
             profile_pic_uri="dummy_pic_uri"
+        )
+
+    def _dummy_twitter_task_status(self, status, content=""):
+        return TwitterTaskStatus.objects.create(
+            username="dummy_name",
+            job="job_id",
+            status=status,
+            twitter_response=content
         )
 
     def test_get_without_params(self):
@@ -69,31 +78,8 @@ class RetrieveTwitterProfileTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, response_dummy)
 
-    @patch('twitterapi.twitter_connector.TwitterAPIConnector.get_twitter_profile')
-    def test_get_twitter_profile_from_connector_invalid_token(self, request_mock):
-        request_mock.return_value = {'status': 401}
-        response = self.client.get(
-            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.content, "Twitter API token invalid")
-
-    @patch('twitterapi.twitter_connector.TwitterAPIConnector.get_twitter_profile')
-    def test_get_twitter_profile_from_connector_profile_doesnt_exist(self, request_mock):
-        request_mock.return_value = {'status': 404}
-        response = self.client.get(
-            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.content, "Twitter username doesnt exist")
-
-    @patch('twitterapi.twitter_connector.TwitterAPIConnector.get_twitter_profile')
-    def test_get_twitter_profile_from_connector_profile_exist(self, request_mock):
-        request_mock.return_value = {'status': 200,
-                                     'twitter_content': {
-                                         'name': 'dummy_name',
-                                         'description': 'dummy_description',
-                                         'profile_image_url': 'dummy_pic_uri',
-                                         'followers_count': 0
-                                     }}
+    def test_get_twitter_profile_exist(self):
+        dummy_profile = self._dummy_twitter_profile()
         response = self.client.get(
             reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
         twitter_profile = json.loads(response.content)['data']
@@ -110,9 +96,55 @@ class RetrieveTwitterProfileTest(TestCase):
         self.assertEqual(twitter_profile['popularity_index'],
                          response_dummy['popularity_index'])
 
-    # @patch('twitterapi.twitter_connector.TwitterAPIConnector')
-    # def test_get_processing_request_at_the_first_request(self):
-    #     response = self.client.get(
-    #         reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
-    #     self.assertEqual(response.status_code, 202)
-    #     self.assertEqual(response.content, "processing request")
+    def test_get_task_status_username_not_found(self):
+        tts = self._dummy_twitter_task_status(404)
+        response = self.client.get(
+            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, 'Twitter username doesnt exist')
+
+    def test_get_task_status_api_key_invalid(self):
+        tts = self._dummy_twitter_task_status(401)
+        response = self.client.get(
+            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.content, 'Twitter API token invalid')
+
+    def test_get_task_status_processing(self):
+        tts = self._dummy_twitter_task_status(202)
+        response = self.client.get(
+            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.content, "processing request")
+
+    def test_get_twitter_task_profile_exist(self):
+        content = json.dumps({
+            "name": "dummy_name",
+            "description": "dummy_description",
+            "profile_image_url": "dummy_pic_uri",
+            "followers_count": 0,
+        })
+        tts = self._dummy_twitter_task_status(200, content=content)
+        response = self.client.get(
+            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
+        twitter_profile = json.loads(response.content)['data']
+        response_dummy = {'name': 'dummy_name',
+                          'description': 'dummy_description',
+                          'profile_pic_uri': 'dummy_pic_uri',
+                          'popularity_index': 0}
+        self.assertEqual(twitter_profile['name'],
+                         response_dummy['name'])
+        self.assertEqual(twitter_profile['description'],
+                         response_dummy['description'])
+        self.assertEqual(twitter_profile['profile_pic_uri'],
+                         response_dummy['profile_pic_uri'])
+        self.assertEqual(twitter_profile['popularity_index'],
+                         response_dummy['popularity_index'])
+
+    def test_get_task_status_unknown_response_status(self):
+        tts = self._dummy_twitter_task_status(250,
+                                              content="unkown message error")
+        response = self.client.get(
+            reverse('twitterapi:retrieve'), {'username': 'dummy_name'})
+        self.assertEqual(response.status_code, 250)
+        self.assertEqual(response.content, "unkown message error")
