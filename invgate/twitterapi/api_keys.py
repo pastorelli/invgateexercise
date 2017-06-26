@@ -9,8 +9,11 @@
     If the urls doesn't exist the application will throw an
     ImproperlyConfigured error.
 """
-CONSUMER_KEY = None
-CONSUMER_SECRET = None
+from django.conf import settings
 
-OAUTH_TOKEN = None
-OAUTH_TOKEN_SECRET = None
+CONSUMER_KEY = settings.CONSUMER_KEY
+CONSUMER_SECRET =  settings.CONSUMER_SECRET
+
+OAUTH_TOKEN = settings.OAUTH_TOKEN
+OAUTH_TOKEN_SECRET = settings.OAUTH_TOKEN_SECRET
+
