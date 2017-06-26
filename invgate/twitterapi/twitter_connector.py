@@ -7,11 +7,22 @@ from __future__ import unicode_literals
 import requests
 from requests_oauthlib import OAuth1
 
-from django.core.exceptions import ImproperlyConfigured
+from django.conf import settings
 
-from .api_keys import (CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN,
-                       OAUTH_TOKEN_SECRET)
 from .twitter_urls import TWITTER_PROFILE_URL
+
+CONSUMER_KEY = settings.CONSUMER_KEY
+CONSUMER_SECRET = settings.CONSUMER_SECRET
+
+OAUTH_TOKEN = settings.OAUTH_TOKEN
+OAUTH_TOKEN_SECRET = settings.OAUTH_TOKEN_SECRET
+
+
+def check_api_keys():
+    if (not CONSUMER_KEY or not CONSUMER_SECRET or not
+            OAUTH_TOKEN or not OAUTH_TOKEN_SECRET):
+        return False
+    return True
 
 
 class TwitterAPIConnector(object):
@@ -26,14 +37,8 @@ class TwitterAPIConnector(object):
         }
 
     def _get_oaut(self):
-        if self._check_api_keys():
+        if check_api_keys():
             return OAuth1(CONSUMER_KEY,
                           client_secret=CONSUMER_SECRET,
                           resource_owner_key=OAUTH_TOKEN,
                           resource_owner_secret=OAUTH_TOKEN_SECRET)
-
-    def _check_api_keys(self):
-        if (not CONSUMER_KEY or not CONSUMER_SECRET or not
-                OAUTH_TOKEN or not OAUTH_TOKEN_SECRET):
-            raise ImproperlyConfigured("Twitter API Keys are missing")
-        return True

@@ -120,3 +120,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+#
+# Here goes the API keys needed to login to the twitter API.
+
+# The keys can be obtained using the twiiter dev page:
+#     -. First create an app and then create the keys for that app
+#         https://apps.twitter.com/
+
+# INFO:
+# If the KEYS doesn't exist the application will throw a not configured error.
+
+CONSUMER_KEY = None
+CONSUMER_SECRET = None
+
+OAUTH_TOKEN = None
+OAUTH_TOKEN_SECRET = None

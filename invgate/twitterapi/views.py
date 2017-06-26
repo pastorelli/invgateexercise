@@ -6,9 +6,11 @@ from braces.views import JSONResponseMixin
 from django.http import (HttpResponseBadRequest, HttpResponse,
                          HttpResponseNotFound)
 from django.views.generic import View
+from django.core.exceptions import ImproperlyConfigured
 
 from .models import TwitterProfile, TwitterTaskStatus
 from .tasks import request_twitter_profile_task
+from .twitter_connector import check_api_keys
 
 
 class RetrieveTwitterProfileView(JSONResponseMixin, View):
@@ -24,6 +26,10 @@ class RetrieveTwitterProfileView(JSONResponseMixin, View):
         if not username:
             return HttpResponseBadRequest(
                 "Twitter username expected as a GET param")
+
+        if not check_api_keys():
+            return HttpResponse("Twitter API keys not configured",
+                                status=503)
 
         # Check if the profile already exists
         twitter_profile = self._get_twitter_profile(username)

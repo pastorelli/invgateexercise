@@ -3,10 +3,12 @@
     Celery task that excecute the twitter request asyncronous.
 """
 from __future__ import absolute_import, unicode_literals
-from celery import shared_task
 
-from .twitter_connector import TwitterAPIConnector
+from celery import shared_task
+from django.core.exceptions import ImproperlyConfigured
+
 from .models import TwitterTaskStatus
+from .twitter_connector import TwitterAPIConnector
 
 
 @shared_task
