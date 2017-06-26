@@ -10,3 +10,6 @@
 
 # db
 db.sqlite3
+
+htmlcov
+.coverage
